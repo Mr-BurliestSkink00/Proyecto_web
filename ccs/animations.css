@@ -1,0 +1,165 @@
+nav a:hover {
+        color:#CB6EEA;
+      }
+
+
+      .cta-button:hover {
+        background-color: #CB6EEA;
+      }
+      
+
+      .producto-boton:hover {
+        background-color: #5a6fd8;
+        transform: scale(1.05);
+      }
+
+
+      .oferta-boton:hover {
+        background: #CB6EEA;
+        transform: scale(1.05);
+      }
+      
+
+      .btn-limpiar:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+      }
+
+
+      .producto-boton-carrito:hover {
+        background: #5a6fd8;
+        transform: scale(1.05);
+      }
+
+
+      .btn-enviar:hover {
+        background: #5a6fd8;
+        transform: translateY(-2px);
+      }
+
+
+      .back-top-link:hover {
+        background: #5a6fd8;
+        transform: translateY(-2px);
+      }
+
+      .producto-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+      }
+
+
+      .oferta-card:hover {
+        transform: translateY(-5px);
+      }
+
+
+      .footer-nav a:hover {
+        color: white;
+      }
+
+
+      .form-field input:focus,
+      .form-field textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        background-color: white;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+
+      .image-placeholder {
+        width: 400px;
+        height: 300px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1rem;
+      }
+
+
+       
+       
+      
+    /* Tarjetas individuales de productos */
+    /* background: gradiente de fondo para efecto visual */
+    /* border-radius: esquinas muy redondeadas para look moderno */
+    /* padding: espacio interno de cada tarjeta */
+    /* border: borde sutil alrededor */
+    /* box-shadow: sombra exterior para efecto de elevación */
+    /* transition: animación suave para efectos hover */
+    /* display: flex y flex-direction: organiza el contenido en columna */
+    /* height: 100% asegura que todas las tarjetas tengan la misma altura */
+      article {
+           background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid #ffffff;
+        box-shadow: 0 4px 12px rgba(250, 250, 250, 0.3);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    /* Efecto hover en las tarjetas de producto */
+    /* transform: mueve la tarjeta hacia arriba 5px */
+    /* box-shadow: aumenta la sombra para efecto de mayor elevación */
+    article:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Títulos de los productos */
+    /* font-size: tamaño moderado para los nombres de productos */
+    /* margin-bottom: espacio debajo del título */
+    /* color: texto blanco */
+    /* min-height: altura mínima para mantener consistencia visual */
+    article h2 {
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+        color: #ffffff;
+        min-height: 3.5rem;
+    }
+
+    /* Descripciones de productos */
+    /* color: texto gris para contraste secundario */
+    /* margin-bottom: espacio debajo de la descripción */
+    /* flex-grow: 1 hace que la descripción ocupe el espacio disponible */
+    article p {
+        color: #b0b0b0;
+        margin-bottom: 1.5rem;
+        flex-grow: 1;
+    }
+
+    /* ===== FIGURAS DE PRODUCTOS (IMÁGENES) ===== */
+    /* Organiza la imagen y su contenido relacionado en columna */
+    /* display: flex y flex-direction: apila elementos verticalmente */
+    /* align-items: centra horizontalmente el contenido */
+    /* margin-bottom: espacio debajo de la figura */
+    figure {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    /* Estilos de las imágenes de productos */
+    /* max-width: 100% asegura que la imagen no sobrepase su contenedor */
+    /* height: altura fija para uniformidad visual */
+    /* object-fit: contain mantiene la proporción de la imagen */
+    /* border-radius: esquinas redondeadas */
+    /* margin-bottom: espacio debajo de la imagen */
+    /* border: borde sutil alrededor de la imagen */
+    figure img {
+        max-width: 100%;
+        height: 200px;
+        object-fit: contain;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border: 1px solid #ffffff;
+    }
