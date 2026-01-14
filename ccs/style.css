@@ -1920,3 +1920,64 @@ body {
 .category-tops { background: #dbeafe; color: #1e40af; }
 .category-bags { background: #fef3c7; color: #92400e; }
 .category-jewellery { background: #ede9fe; color: #5b21b6; }
+
+@media (max-width: 768px) {
+
+  nav ul {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  nav a {
+    padding: 0.5rem 0;
+    display: block;
+    width: 100%;
+  }
+
+  .header-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  /* Cart: make dropdown fit mobile screens and scroll */
+  .cart-dropdown {
+    position: fixed;
+    right: 12px;
+    left: 12px;
+    top: 72px; /* ajusta si tu header tiene otra altura */
+    width: auto;
+    max-width: calc(100% - 24px);
+    min-width: auto;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+    max-height: calc(100vh - 96px);
+    overflow: auto;
+    z-index: 1500;
+  }
+
+  .cart-body {
+    padding: 1rem;
+  }
+
+  .cart-body table {
+    width: 100%;
+    font-size: 0.95rem;
+  }
+
+  .cart-thumb { width:48px; height:48px; }
+
+  .cart-header{ font-weight:700; font-size:0.95rem; display:flex; align-items:center; justify-content:space-between; }
+
+  .contador-carrito {
+    top: -6px;
+    right: -6px;
+    padding: 0 6px;
+    min-width: 20px;
+    height: 20px;
+    font-size: 0.75rem;
+  }
+
+  /* Ensure the cart button stays visible */
+  .btn-carrito { z-index:1600; }}
