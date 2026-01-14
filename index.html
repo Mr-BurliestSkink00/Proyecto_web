@@ -20,16 +20,60 @@
   <body>
     <!-- HEADER: sitio primario de navegacion -->
     <header role="banner">
-      <div class="header-container">
-        <a href="#" class="logo">VestIA</a>
-        <nav>
-          <ul>
-            <li><a href="#inicio">Inicio</a></li>
-            <li><a href="#catalogo">Catálogo</a></li>
-            <li><a href="#ofertas">Ofertas</a></li>
-            <li><a href="#contacto">Contacto</a></li>
+      <div class="header-container d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-4">
+          <a href="#" class="logo">VestIA</a>
+          <nav>
+            <ul class="list-unstyled d-flex gap-3 mb-0">
+              <li><a href="#inicio">Inicio</a></li>
+              <li><a href="#catalogo">Catálogo</a></li>
+              <li><a href="#ofertas">Ofertas</a></li>
+              <li><a href="#contacto">Contacto</a></li>
+            </ul>
+          </nav>
+        </div>
+
+        <div class="header-actions">
+          <ul class="list-unstyled d-flex mb-0 align-items-center gap-3">
+            <li class="submenu position-relative">
+              <button id="btn-carrito" class="btn-carrito" aria-expanded="false" aria-controls="cart-dropdown" title="Abrir carrito">
+                <img src="Imagenes/shopping_cart_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg" id="img-carrito" alt="carrito de compras">
+                <span id="contador_carrito" class="contador-carrito">0</span>
+              </button>
+
+              <div id="cart-dropdown" class="cart-dropdown bg-white p-3 shadow" hidden>
+                <div class="cart-header mb-2 d-flex align-items-center justify-content-between">
+                  <strong>Carrito</strong>
+                  <small id="cart-count" class="text-muted">0 items</small>
+                </div>
+
+                <div class="cart-body" style="max-height:320px; overflow:auto; margin-bottom:0.5rem;">
+                  <table id="lista_Carrito" class="table table-sm mb-0">
+                    <tbody></tbody>
+                  </table>
+                </div>
+
+                <div class="cart-footer d-flex flex-column gap-2 mt-3">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>Total:</div>
+                    <div id="cart-total" class="fw-bold">US$ 0.00</div>
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button id="checkout_btn" class="btn btn-primary w-100" disabled>Pagar</button>
+                    <a href="#" id="clean_cart" class="btn btn-outline-secondary">Vaciar</a>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li class="pref-auto d-flex align-items-center gap-2">
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" id="toggle-apply-prefs" type="checkbox" role="switch" />
+                <label class="form-check-label small text-white" for="toggle-apply-prefs">Aplicar preferencias</label>
+              </div>
+              <button id="btn-apply-prefs" class="btn btn-sm btn-outline-light">Aplicar ahora</button>
+            </li>
           </ul>
-        </nav>
+        </div>
       </div>
     </header>
 
@@ -72,7 +116,7 @@
             </div>
           </div>
 
-          <div id="productos-grid" class="productos-grid">
+          <div id="productos-grid" class="productos-grid row">
           </div>
     
           <div id="mensaje-estado" class="text-center mt-3"></div>
@@ -295,7 +339,8 @@
             </div>
         </div>
 
-        <!-- Debug Panel (Collapsible) -->
+
+        <!-- Debug Panel  -->
         <div class="debug-panel" id="debugPanel">
             <div class="debug-header" id="debugToggle">
                 <i class="fas fa-code"></i>
@@ -335,9 +380,6 @@
     </div>
 
 
-
-
-
         <!-- FOOTER -->
     <footer role="contentinfo">
       <div class="footer-container">
@@ -362,9 +404,44 @@
         </div>
       </div>
     </footer>
-    <!-- Scripts -->
-    <script src="./js/config.js"></script>
-    <script src="./js/chatbot.js"></script>
-    <script src="./js/filters.js"></script>
+
+    <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Título</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6">
+                <img src="" alt="" class="img-fluid modal-image">
+              </div>
+              <div class="col-md-6">
+                <p class="text-muted modal-meta"></p>
+                <p class="modal-desc"></p>
+                <div class="h4 modal-price"></div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary add-to-cart-btn producto-boton" data-id="">Agregar al carrito</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <script type="module" src="./js/config.js"></script>
+    <script type="module" src="./js/products.js"></script>
+    <script type="module" src="./js/Filters.js"></script>
+    <script type="module" src="./js/profile.js"></script>
+    <script type="module" src="./js/chatbot.js"></script>
+    <script src="./js/cart.js"></script>
+    <script type="module" src="./js/main.js"></script>
   </body>
 </html>
