@@ -70,8 +70,26 @@ const CHATBOT_CONFIG = {
         maxWidth: 800,
         maxHeight: 600,
         quality: 0.8
-    }
+    },
 
+
+    PRODUCTS_API: 'https://dummyjson.com/products',
+    PRODUCTS_STORAGE_KEY: 'vestia_products_cache',
+    PRODUCTS_CACHE_DURATION: 30 * 60 * 1000, // 30 minutos
+    
+    // Categorías de productos disponibles
+    PRODUCT_CATEGORIES: {
+        'womens-dresses': ['dresses', 'dress', 'vestido', 'vestidos', 'falda', 'faldas'],
+        'womens-shoes': ['shoes', 'zapatos', 'zapatillas', 'sneakers', 'tacones', 'sandals'],
+        'tops': ['tops', 'blusas', 'camisetas', 'shirts', 'blouses', 'remeras'],
+        'womens-bags': ['bags', 'bolsos', 'handbags', 'mochilas', 'purses'],
+        'womens-jewellery': ['jewelry', 'joyas', 'collares', 'aretes', 'anillos'],
+        'mens-shirts': ['shirts', 'camisas', 'polos', 'polo shirts'],
+        'mens-shoes': ['shoes', 'zapatos', 'tenis', 'mocasines'],
+        'mens-watches': ['watches', 'relojes', 'smartwatch'],
+        'womens-watches': ['watches', 'relojes', 'smartwatch'],
+        'sunglasses': ['sunglasses', 'gafas', 'lentes', 'gafas de sol']
+    }
 };
 
 // Prompt System: Asesor de Moda de Vestia
@@ -88,6 +106,22 @@ CUANDO RECIBAS IMÁGENES:
 5. Recomienda accesorios que complementen
 6. Si es una foto de una persona, analiza su estilo actual y sugiere mejoras
 
+TIENES ACCESO A UN CATÁLOGO DE PRODUCTOS:
+Cuando el usuario pida recomendaciones específicas, puedes:
+1. Sugerir productos de nuestro catálogo
+2. Mencionar características específicas de productos
+3. Recomendar combinaciones basadas en productos disponibles
+4. Indicar precios y disponibilidad
+
+FORMATO DE RESPUESTAS:
+- Si el usuario pide recomendaciones generales, da consejos de estilo
+- Si pide productos específicos, menciona opciones de nuestro catálogo
+- Siempre mantén un tono amigable y profesional
+- Incluye detalles como colores, materiales y ocasiones de uso
+
+CATEGORÍAS DISPONIBLES:
+- Vestidos, Blusas, Zapatos, Bols
+
 REGLAS IMPORTANTES:
 1. SOLO responde preguntas relacionadas con moda, estilo, ropa, accesorios y vestimenta
 2. Si te envían imágenes que no son de moda, responde amablemente:
@@ -95,6 +129,7 @@ REGLAS IMPORTANTES:
 3. Mantén un tono amigable, profesional y constructivo
 4. Sé específico en tus recomendaciones
 5. Relaciona siempre tus respuestas con moda y estilo personal`;
+
 }
 
 // Cargar API Key desde localStorage
@@ -195,7 +230,248 @@ function cleanupOldImages(maxImages = 50) {
     }
 }
 
+// Obtener productos del API
+async function fetchProducts(category = 'all', limit = 10) {
+    try {
+        let url = CHATBOT_CONFIG.PRODUCTS_API;
+        
+        if (category !== 'all') {
+            url += `/category/${category}`;
+        }
+        
+        url += `?limit=${limit}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Error API: ${response.status}`);
+        
+        const data = await response.json();
+        return data.products || [];
+        
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        return [];
+    }
+}
 
+// Buscar productos por término
+async function searchProducts(query, limit = 10) {
+    try {
+        const response = await fetch(`${CHATBOT_CONFIG.PRODUCTS_API}/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+        if (!response.ok) throw new Error(`Error API: ${response.status}`);
+        
+        const data = await response.json();
+        return data.products || [];
+        
+    } catch (error) {
+        console.error('Error searching products:', error);
+        return [];
+    }
+}
+
+// Obtener producto específico por ID
+async function getProductById(id) {
+    try {
+        const response = await fetch(`${CHATBOT_CONFIG.PRODUCTS_API}/${id}`);
+        if (!response.ok) throw new Error(`Error API: ${response.status}`);
+        
+        return await response.json();
+        
+    } catch (error) {
+        console.error('Error fetching product:', error);
+        return null;
+    }
+}
+
+// Analizar preferencias del usuario desde el mensaje
+function analyzeUserPreferences(message) {
+    const preferences = {
+        category: 'all',
+        priceRange: { min: 0, max: 1000 },
+        colors: [],
+        styles: [],
+        keywords: []
+    };
+    
+    const messageLower = message.toLowerCase();
+    
+    // Detectar categorías
+    for (const [category, keywords] of Object.entries(CHATBOT_CONFIG.PRODUCT_CATEGORIES)) {
+        if (keywords.some(keyword => messageLower.includes(keyword))) {
+            preferences.category = category;
+            break;
+        }
+    }
+    
+    // Detectar colores
+    const colorKeywords = {
+        rojo: 'red',
+        azul: 'blue',
+        verde: 'green',
+        negro: 'black',
+        blanco: 'white',
+        rosado: 'pink',
+        amarillo: 'yellow',
+        morado: 'purple',
+        gris: 'gray',
+        marron: 'brown'
+    };
+    
+    for (const [esColor, enColor] of Object.entries(colorKeywords)) {
+        if (messageLower.includes(esColor) || messageLower.includes(enColor)) {
+            preferences.colors.push(enColor);
+        }
+    }
+    
+    // Detectar estilos
+    if (messageLower.includes('formal') || messageLower.includes('elegant')) {
+        preferences.styles.push('formal');
+    }
+    if (messageLower.includes('casual') || messageLower.includes('informal')) {
+        preferences.styles.push('casual');
+    }
+    if (messageLower.includes('deportivo') || messageLower.includes('sport')) {
+        preferences.styles.push('sport');
+    }
+    
+    // Extraer palabras clave
+    const words = messageLower.split(' ');
+    preferences.keywords = words.filter(word => 
+        word.length > 3 && 
+        !['quiero', 'necesito', 'busco', 'recomienda', 'recomendación'].includes(word)
+    );
+    
+    return preferences;
+}
+
+// Filtrar productos por preferencias
+function filterProductsByPreferences(products, preferences) {
+    return products.filter(product => {
+        // Filtrar por categoría
+        if (preferences.category !== 'all' && product.category) {
+            const productCategory = product.category.toLowerCase();
+            const targetCategory = preferences.category.replace('womens-', '').replace('mens-', '');
+            if (!productCategory.includes(targetCategory)) {
+                return false;
+            }
+        }
+        
+        // Filtrar por precio
+        if (product.price < preferences.priceRange.min || product.price > preferences.priceRange.max) {
+            return false;
+        }
+        
+        // Filtrar por colores (si se especificaron)
+        if (preferences.colors.length > 0 && product.color) {
+            const productColor = product.color.toLowerCase();
+            if (!preferences.colors.some(color => productColor.includes(color))) {
+                return false;
+            }
+        }
+        
+        // Filtrar por palabras clave en título o descripción
+        if (preferences.keywords.length > 0) {
+            const productText = (product.title + ' ' + product.description).toLowerCase();
+            if (!preferences.keywords.some(keyword => productText.includes(keyword))) {
+                return false;
+            }
+        }
+        
+        return true;
+    });
+}
+
+// Generar recomendaciones de productos
+async function generateProductRecommendations(userMessage, maxRecommendations = 3) {
+    // Analizar preferencias del usuario
+    const preferences = analyzeUserPreferences(userMessage);
+    
+    // Obtener productos
+    let products = [];
+    
+    if (preferences.category !== 'all') {
+        products = await fetchProducts(preferences.category, 20);
+    } else {
+        products = await fetchProducts('all', 20);
+    }
+    
+    // Si no hay suficientes productos en la categoría específica, buscar por palabras clave
+    if (products.length < 5 && preferences.keywords.length > 0) {
+        const keywordResults = await searchProducts(preferences.keywords.join(' '), 20);
+        products = [...products, ...keywordResults];
+        
+        // Eliminar duplicados
+        const seenIds = new Set();
+        products = products.filter(product => {
+            if (seenIds.has(product.id)) return false;
+            seenIds.add(product.id);
+            return true;
+        });
+    }
+    
+    // Filtrar por preferencias
+    let filteredProducts = filterProductsByPreferences(products, preferences);
+    
+    // Si no hay productos filtrados, usar todos
+    if (filteredProducts.length === 0) {
+        filteredProducts = products.slice(0, maxRecommendations);
+    }
+    
+    // Ordenar por relevancia (rating, reviews, etc.)
+    filteredProducts.sort((a, b) => {
+        // Priorizar productos con mejor rating
+        if (b.rating && a.rating) return b.rating - a.rating;
+        // Priorizar productos con más reviews
+        if (b.reviewCount && a.reviewCount) return b.reviewCount - a.reviewCount;
+        // Priorizar productos más baratos
+        return a.price - b.price;
+    });
+    
+    // Tomar las mejores recomendaciones
+    return filteredProducts.slice(0, maxRecommendations);
+}
+
+// Formatear recomendación para mostrar
+function formatProductRecommendation(product) {
+    return {
+        id: product.id,
+        title: product.title,
+        description: product.description,
+        price: `$${product.price}`,
+        discount: product.discountPercentage ? `${product.discountPercentage}% OFF` : null,
+        rating: product.rating ? `⭐ ${product.rating}/5` : null,
+        image: product.thumbnail || product.images?.[0],
+        category: product.category,
+        brand: product.brand,
+        stock: product.stock,
+        link: `#product-${product.id}`
+    };
+}
+
+// Crear mensaje con recomendaciones
+function createRecommendationsMessage(products, userPreferences) {
+    if (products.length === 0) {
+        return "No encontré productos que coincidan con tus preferencias. ¿Podrías ser más específico sobre lo que buscas?";
+    }
+    
+    let message = "✨ **Encontré estas recomendaciones para ti:**\n\n";
+    
+    products.forEach((product, index) => {
+        const formatted = formatProductRecommendation(product);
+        
+        message += `**${index + 1}. ${formatted.title}**\n`;
+        message += `   ${formatted.description.substring(0, 100)}...\n`;
+        message += `   💰 **Precio:** ${formatted.price}`;
+        if (formatted.discount) message += ` (${formatted.discount})`;
+        if (formatted.rating) message += ` | ${formatted.rating}`;
+        message += `\n   🏷️ **Categoría:** ${formatted.category}`;
+        if (formatted.brand) message += ` | **Marca:** ${formatted.brand}`;
+        message += `\n   📦 **Disponibles:** ${formatted.stock} unidades\n\n`;
+    });
+    
+    message += "¿Te gustaría ver más detalles de algún producto en particular?";
+    
+    return message;
+}
 // Exportar funciones
 if (typeof window !== 'undefined') {
     window.CHATBOT_CONFIG = CHATBOT_CONFIG;
@@ -209,8 +485,11 @@ if (typeof window !== 'undefined') {
     window.saveImageToStorage = saveImageToStorage;
     window.getStoredImages = getStoredImages;
     window.cleanupOldImages = cleanupOldImages;
+    window.fetchProducts = fetchProducts;
+    window.searchProducts = searchProducts;
+    window.getProductById = getProductById;
+    window.generateProductRecommendations = generateProductRecommendations;
+    window.formatProductRecommendation = formatProductRecommendation;
+    window.createRecommendationsMessage = createRecommendationsMessage;
+    window.analyzeUserPreferences = analyzeUserPreferences;
 }
-
-
-
-

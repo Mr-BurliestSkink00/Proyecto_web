@@ -7,6 +7,7 @@ let responseTimes = [];
 let isStreaming = false;
 let currentAbortController = null;
 let selectedImages = [];
+let lastRecommendations = []; // Para guardar últimas recomendaciones
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
@@ -153,6 +154,7 @@ async function sendMessage() {
     
     if (!message || isStreaming) return;
     
+
     if (!hasApiKey()) {
         showNotification('Por favor, configura tu API Key primero', 'error');
         document.getElementById('apiConfig').style.display = 'block';
@@ -190,6 +192,19 @@ async function sendMessage() {
         // Guardar historial
         saveChatHistory();
         
+
+        isStreaming = true;
+        
+        // Detectar si el usuario pide recomendaciones
+        const isRecommendationRequest = detectRecommendationRequest(message);
+        
+        if (isRecommendationRequest) {
+            // Generar recomendaciones de productos
+            await handleProductRecommendations(message, typingId);
+        } else {
+            // Respuesta normal del chatbot
+            await handleNormalResponse(message, typingId);
+        }
     } catch (error) {
         hideTypingIndicator(typingId);
         
@@ -215,6 +230,10 @@ async function sendMessage() {
         
         // Mostrar error en panel de debug
         updateDebugPanel(null, error);
+
+        hideTypingIndicator(typingId);
+        handleChatError(error);
+        isStreaming = false;
     } finally {
         isStreaming = false;
         currentAbortController = null;
@@ -1358,4 +1377,455 @@ function clearChat() {
     localStorage.removeItem(CHATBOT_CONFIG.STORAGE_HISTORY);
     
     showNotification('Chat limpiado', 'success');
+}
+
+
+
+
+
+
+// Detectar si el usuario está pidiendo recomendaciones
+function detectRecommendationRequest(message) {
+    const lowerMessage = message.toLowerCase();
+    const recommendationKeywords = [
+        'recomienda', 'recomendación', 'recomendaciones',
+        'sugiere', 'sugerencia', 'sugerencias',
+        'busco', 'quiero', 'necesito',
+        'qué me recomiendas', 'qué sugieres',
+        'ropa', 'vestido', 'zapatos', 'accesorios',
+        'comprar', 'adquirir', 'conseguir'
+    ];
+    
+    return recommendationKeywords.some(keyword => lowerMessage.includes(keyword));
+}
+
+// Manejar recomendaciones de productos
+async function handleProductRecommendations(userMessage, typingId) {
+    try {
+        // Ocultar indicador de escritura inicial
+        hideTypingIndicator(typingId);
+        
+        // Mostrar mensaje de búsqueda
+        addMessage('bot', '🔍 Buscando las mejores opciones para ti...');
+        
+        // Generar recomendaciones
+        const recommendations = await generateProductRecommendations(userMessage, 3);
+        lastRecommendations = recommendations; // Guardar para referencia
+        
+        if (recommendations.length > 0) {
+            // Crear mensaje con recomendaciones
+            const recommendationsMessage = createRecommendationsMessage(recommendations, analyzeUserPreferences(userMessage));
+            
+            // Agregar recomendaciones al chat
+            addMessage('bot', recommendationsMessage);
+            
+            // Mostrar tarjetas de productos
+            showProductCards(recommendations);
+            
+            // Agregar botón para ver más
+            addViewMoreButton();
+            
+        } else {
+            addMessage('bot', 'No encontré productos que coincidan con tu búsqueda. ¿Podrías intentar con otras palabras?');
+        }
+        
+    } catch (error) {
+        console.error('Error en recomendaciones:', error);
+        addMessage('bot', 'Lo siento, hubo un problema al buscar recomendaciones. Por favor, intenta de nuevo.');
+    } finally {
+        isStreaming = false;
+    }
+}
+
+// Mostrar tarjetas de productos en el chat
+function showProductCards(products) {
+    const chatMessages = document.getElementById('chatMessages');
+    
+    const productsContainer = document.createElement('div');
+    productsContainer.className = 'product-recommendations-container';
+    productsContainer.style.cssText = `
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+    `;
+    
+    products.forEach(product => {
+        const productCard = createProductCard(product);
+        productsContainer.appendChild(productCard);
+    });
+    
+    chatMessages.appendChild(productsContainer);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Crear tarjeta de producto
+function createProductCard(product) {
+    const formatted = formatProductRecommendation(product);
+    
+    const card = document.createElement('div');
+    card.className = 'product-recommendation-card';
+    card.dataset.productId = product.id;
+    card.style.cssText = `
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        cursor: pointer;
+    `;
+    
+    card.innerHTML = `
+        <div class="product-card-image" style="height: 180px; overflow: hidden;">
+            <img src="${formatted.image}" alt="${formatted.title}" 
+                 style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease;">
+        </div>
+        <div class="product-card-content" style="padding: 15px;">
+            <h4 style="margin: 0 0 8px 0; font-size: 1rem; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${formatted.title}
+            </h4>
+            <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px; height: 40px; overflow: hidden;">
+                ${formatted.description.substring(0, 60)}...
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: bold; color: #667eea; font-size: 1.1rem;">
+                    ${formatted.price}
+                </span>
+                ${formatted.rating ? `<span style="background: #fbbf24; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.8rem;">
+                    ${formatted.rating.split(' ')[1]}
+                </span>` : ''}
+            </div>
+            ${formatted.discount ? `<div style="margin-top: 8px; background: #10b981; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; display: inline-block;">
+                ${formatted.discount}
+            </div>` : ''}
+            <button class="view-product-btn" style="margin-top: 12px; width: 100%; padding: 8px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
+                Ver detalles
+            </button>
+        </div>
+    `;
+    
+    // Efecto hover
+    card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-5px)';
+        card.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+        card.querySelector('img').style.transform = 'scale(1.05)';
+    });
+    
+    card.addEventListener('mouseleave', () => {
+        card.style.transform = 'translateY(0)';
+        card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+        card.querySelector('img').style.transform = 'scale(1)';
+    });
+    
+    // Click en el botón
+    const viewBtn = card.querySelector('.view-product-btn');
+    viewBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showProductDetails(product.id);
+    });
+    
+    // Click en toda la tarjeta
+    card.addEventListener('click', () => {
+        showProductDetails(product.id);
+    });
+    
+    return card;
+}
+
+// Mostrar detalles del producto
+async function showProductDetails(productId) {
+    try {
+        const product = await getProductById(productId);
+        if (!product) {
+            showNotification('No se pudo cargar el producto', 'error');
+            return;
+        }
+        
+        const formatted = formatProductRecommendation(product);
+        
+        // Crear modal de detalles
+        const modal = document.createElement('div');
+        modal.className = 'product-details-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 12px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative;">
+                <button class="close-modal" style="position: absolute; top: 15px; right: 15px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 18px; cursor: pointer; z-index: 10;">
+                    ×
+                </button>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; padding: 30px;">
+                    <!-- Imágenes del producto -->
+                    <div>
+                        <div style="border-radius: 8px; overflow: hidden; margin-bottom: 15px;">
+                            <img src="${formatted.image}" alt="${formatted.title}" 
+                                 style="width: 100%; height: 300px; object-fit: contain;">
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            ${product.images && product.images.slice(0, 4).map(img => `
+                                <img src="${img}" alt="" style="width: 70px; height: 70px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #e2e8f0;">
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Información del producto -->
+                    <div>
+                        <h2 style="margin: 0 0 10px 0; color: #333;">${formatted.title}</h2>
+                        <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                            ${formatted.rating ? `<span style="background: #fbbf24; color: white; padding: 4px 10px; border-radius: 20px;">
+                                ${formatted.rating}
+                            </span>` : ''}
+                            <span style="background: #667eea; color: white; padding: 4px 10px; border-radius: 20px;">
+                                ${formatted.category}
+                            </span>
+                            ${formatted.brand ? `<span style="background: #10b981; color: white; padding: 4px 10px; border-radius: 20px;">
+                                ${formatted.brand}
+                            </span>` : ''}
+                        </div>
+                        
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #667eea; margin: 15px 0;">
+                            ${formatted.price}
+                            ${formatted.discount ? `<span style="font-size: 1rem; color: #ef4444; margin-left: 10px;">
+                                ${formatted.discount}
+                            </span>` : ''}
+                        </div>
+                        
+                        <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+                            ${product.description}
+                        </p>
+                        
+                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <h4 style="margin: 0 0 10px 0; color: #333;">📊 Disponibilidad</h4>
+                            <div style="display: flex; gap: 20px;">
+                                <div>
+                                    <div style="font-weight: bold; color: #333;">Stock</div>
+                                    <div style="color: ${formatted.stock > 0 ? '#10b981' : '#ef4444'};">
+                                        ${formatted.stock} unidades
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="font-weight: bold; color: #333;">Marca</div>
+                                    <div style="color: #666;">${formatted.brand || 'No especificada'}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="add-to-cart-btn" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-bottom: 10px;">
+                            🛒 Agregar al carrito - ${formatted.price}
+                        </button>
+                        
+                        <button class="share-product-btn" style="width: 100%; padding: 10px; background: #f8fafc; color: #333; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer;">
+                            📤 Compartir producto
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Cerrar modal
+        modal.querySelector('.close-modal').addEventListener('click', () => {
+            modal.remove();
+        });
+        
+        // Cerrar al hacer click fuera
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+        
+        // Agregar al carrito
+        modal.querySelector('.add-to-cart-btn').addEventListener('click', () => {
+            showNotification(`"${formatted.title}" agregado al carrito`, 'success');
+            // Aquí podrías integrar con tu sistema de carrito
+        });
+        
+        // Cambiar imagen al hacer click en miniaturas
+        const mainImg = modal.querySelector('img[alt]');
+        modal.querySelectorAll('img:not([alt])').forEach(thumb => {
+            thumb.addEventListener('click', () => {
+                mainImg.src = thumb.src;
+            });
+        });
+        
+    } catch (error) {
+        console.error('Error cargando detalles:', error);
+        showNotification('Error al cargar detalles del producto', 'error');
+    }
+}
+
+// Agregar botón para ver más productos
+function addViewMoreButton() {
+    const chatMessages = document.getElementById('chatMessages');
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = `
+        text-align: center;
+        margin: 20px 0;
+    `;
+    
+    const viewMoreBtn = document.createElement('button');
+    viewMoreBtn.textContent = '🔍 Ver más productos similares';
+    viewMoreBtn.style.cssText = `
+        background: linear-gradient(135deg, #CB6EEA 0%, #9d4edd 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 25px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    `;
+    
+    viewMoreBtn.addEventListener('mouseenter', () => {
+        viewMoreBtn.style.transform = 'translateY(-2px)';
+        viewMoreBtn.style.boxShadow = '0 5px 15px rgba(203, 110, 234, 0.4)';
+    });
+    
+    viewMoreBtn.addEventListener('mouseleave', () => {
+        viewMoreBtn.style.transform = 'translateY(0)';
+        viewMoreBtn.style.boxShadow = 'none';
+    });
+    
+    viewMoreBtn.addEventListener('click', async () => {
+        viewMoreBtn.disabled = true;
+        viewMoreBtn.textContent = 'Buscando más productos...';
+        
+        try {
+            // Buscar más productos de la misma categoría
+            const moreProducts = await fetchProducts('all', 6);
+            
+            // Mostrar nuevos productos
+            showProductCards(moreProducts.slice(0, 3));
+            
+        } catch (error) {
+            showNotification('Error al cargar más productos', 'error');
+        } finally {
+            viewMoreBtn.remove();
+        }
+    });
+    
+    buttonContainer.appendChild(viewMoreBtn);
+    chatMessages.appendChild(buttonContainer);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Respuesta normal del chatbot (modificar para incluir sugerencias)
+async function handleNormalResponse(message, typingId) {
+    const startTime = Date.now();
+    
+    try {
+        currentAbortController = new AbortController();
+        
+        // Verificar si es una pregunta de moda
+        const isFashionQuestion = isFashionRelated(message);
+        
+        if (isFashionQuestion) {
+            // Agregar sugerencia de productos al prompt
+            const enhancedPrompt = await enhancePromptWithProducts(message);
+            const response = await getGeminiResponse(enhancedPrompt, currentAbortController.signal);
+            
+            hideTypingIndicator(typingId);
+            
+            const responseTime = Date.now() - startTime;
+            responseTimes.push(responseTime);
+            updateStats();
+            
+            addMessage('bot', response);
+            
+            // Si la respuesta sugiere productos, mostrar recomendaciones
+            if (response.includes('producto') || response.includes('recomiendo')) {
+                setTimeout(() => {
+                    addMessage('bot', '¿Te gustaría que te muestre algunos productos específicos de nuestro catálogo?');
+                }, 1000);
+            }
+            
+        } else {
+            // Respuesta normal
+            const response = await getGeminiResponse(message, currentAbortController.signal);
+            
+            hideTypingIndicator(typingId);
+            
+            const responseTime = Date.now() - startTime;
+            responseTimes.push(responseTime);
+            updateStats();
+            
+            addMessage('bot', response);
+        }
+        
+        saveChatHistory();
+        
+    } catch (error) {
+        hideTypingIndicator(typingId);
+        handleChatError(error);
+    } finally {
+        isStreaming = false;
+        currentAbortController = null;
+    }
+}
+
+// Verificar si es una pregunta relacionada con moda
+function isFashionRelated(message) {
+    const fashionKeywords = [
+        'ropa', 'vestido', 'zapatos', 'accesorios', 'moda', 'estilo',
+        'combinar', 'color', 'talla', 'temporada', 'ocasión',
+        'elegante', 'casual', 'formal', 'deportivo',
+        'prendas', 'outfit', 'look', 'conjunto'
+    ];
+    
+    const lowerMessage = message.toLowerCase();
+    return fashionKeywords.some(keyword => lowerMessage.includes(keyword));
+}
+
+// Mejorar el prompt con información de productos disponibles
+async function enhancePromptWithProducts(message) {
+    const products = await fetchProducts('all', 5);
+    const productsInfo = products.map(p => 
+        `- ${p.title}: ${p.description.substring(0, 100)}... ($${p.price}, ${p.category})`
+    ).join('\n');
+    
+    return `El usuario pregunta: "${message}"
+
+Productos disponibles en nuestro catálogo:
+${productsInfo}
+
+Como asesora de moda de Vestia, responde ayudando con la pregunta y menciona productos relevantes de nuestro catálogo si es apropiado.`;
+}
+
+// Manejar errores del chat
+function handleChatError(error) {
+    let errorMessage = 'Lo siento, hubo un error al procesar tu mensaje.';
+    
+    if (error.name === 'AbortError') {
+        errorMessage = 'La solicitud fue cancelada.';
+    } else if (error.message) {
+        if (error.message.includes('API key')) {
+            errorMessage = '⚠️ Error: API Key inválida. Por favor, verifica tu configuración.';
+            updateApiStatus(false);
+        } else {
+            errorMessage = `⚠️ ${error.message}`;
+        }
+    }
+    
+    addMessage('bot', errorMessage);
+    console.error('Error en chatbot:', error);
+    updateDebugPanel(null, error);
 }

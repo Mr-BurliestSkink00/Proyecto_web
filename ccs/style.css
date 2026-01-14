@@ -1663,3 +1663,127 @@ body {
         font-size: 0.8rem;
     }
 }
+
+
+/* ============================================
+   ESTILOS PARA RECOMENDACIONES DE PRODUCTOS
+   ============================================ */
+
+/* Contenedor de recomendaciones */
+.product-recommendations-container {
+    animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Tarjetas de productos */
+.product-recommendation-card {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Modal de detalles */
+.product-details-modal {
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(5px);
+    }
+}
+
+/* Botones de acción */
+.view-product-btn, .add-to-cart-btn, .share-product-btn {
+    transition: all 0.3s ease !important;
+}
+
+.view-product-btn:hover {
+    background: #5a6fd8 !important;
+    transform: translateY(-1px);
+}
+
+.add-to-cart-btn:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6b3d9c 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+.share-product-btn:hover {
+    background: #e2e8f0 !important;
+    border-color: #cbd5e1 !important;
+}
+
+/* Indicador de carga para productos */
+.loading-products {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.loading-products .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .product-recommendations-container {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .product-details-modal > div {
+        grid-template-columns: 1fr !important;
+        max-height: 95vh !important;
+    }
+    
+    .product-details-modal img[style*="height: 300px"] {
+        height: 200px !important;
+    }
+}
+
+/* Badges de categoría */
+.category-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
+.category-dresses { background: #fce7f3; color: #be185d; }
+.category-shoes { background: #dcfce7; color: #166534; }
+.category-tops { background: #dbeafe; color: #1e40af; }
+.category-bags { background: #fef3c7; color: #92400e; }
+.category-jewellery { background: #ede9fe; color: #5b21b6; }
