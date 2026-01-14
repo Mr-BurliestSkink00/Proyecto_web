@@ -20,7 +20,7 @@ const CHATBOT_CONFIG = {
     STORAGE_HISTORY: 'gemini_chatbot_history',
     
     // Configuración del modelo
-    MODEL_NAME: 'gemini-2.5-flash',
+    MODEL_NAME: 'Edna Modas ',
     
     // Modelos alternativos disponibles (ordenados por prioridad)
     // El sistema intentará automáticamente estos modelos si el principal falla
@@ -58,12 +58,43 @@ const CHATBOT_CONFIG = {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
             threshold: 'BLOCK_MEDIUM_AND_ABOVE'
         }
-    ]
+    ],
+
+     // imagenes
+    MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB máximo
+    ALLOWED_IMAGE_TYPES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    STORAGE_IMAGES: 'gemini_chatbot_images',
+    
+    // Configuración para procesamiento de imágenes
+    IMAGE_PROCESSING: {
+        maxWidth: 800,
+        maxHeight: 600,
+        quality: 0.8
+    }
+
 };
 
 // Prompt System: Asesor de Moda de Vestia
 function getSystemPrompt() {
-    return `AQUI DEBERIA IR TU PROMPT PARA LIMITAR AL CHATBOT`;
+    return `Eres Edna Modas, una asesora de moda especializada en Vestia. 
+Tu propósito es ayudar a los usuarios con recomendaciones de moda, combinaciones de ropa, 
+estilos y consejos de vestimenta.
+
+CUANDO RECIBAS IMÁGENES:
+1. Analiza las prendas de vestir, colores, estilos y accesorios
+2. Da recomendaciones específicas basadas en lo que ves
+3. Sugiere combinaciones con otras prendas
+4. Identifica el estilo (casual, formal, deportivo, etc.)
+5. Recomienda accesorios que complementen
+6. Si es una foto de una persona, analiza su estilo actual y sugiere mejoras
+
+REGLAS IMPORTANTES:
+1. SOLO responde preguntas relacionadas con moda, estilo, ropa, accesorios y vestimenta
+2. Si te envían imágenes que no son de moda, responde amablemente:
+   "Veo que has compartido una imagen, pero como tu asesora de moda, solo puedo ayudarte con análisis de prendas y estilo. ¿Tienes alguna prenda que quieras que analice?"
+3. Mantén un tono amigable, profesional y constructivo
+4. Sé específico en tus recomendaciones
+5. Relaciona siempre tus respuestas con moda y estilo personal`;
 }
 
 // Cargar API Key desde localStorage
@@ -110,6 +141,61 @@ function getNextModel(currentModel) {
     return null;
 }
 
+// Función para verificar si Gemini soporta imágenes
+function supportsImages() {
+    // Gemini 1.5 y 2.0+ soportan imágenes
+    return CHATBOT_CONFIG.MODEL_NAME.includes('1.5') || 
+           CHATBOT_CONFIG.MODEL_NAME.includes('2.0') ||
+           CHATBOT_CONFIG.MODEL_NAME.includes('2.5');
+}
+
+// Guardar imagen en localStorage
+function saveImageToStorage(imageId, imageData) {
+    try {
+        const images = getStoredImages();
+        images[imageId] = {
+            data: imageData,
+            timestamp: new Date().toISOString(),
+            size: imageData.length
+        };
+        localStorage.setItem(CHATBOT_CONFIG.STORAGE_IMAGES, JSON.stringify(images));
+        return true;
+    } catch (error) {
+        console.error('Error guardando imagen:', error);
+        return false;
+    }
+}
+
+// Obtener imágenes almacenadas
+function getStoredImages() {
+    try {
+        const stored = localStorage.getItem(CHATBOT_CONFIG.STORAGE_IMAGES);
+        return stored ? JSON.parse(stored) : {};
+    } catch (error) {
+        return {};
+    }
+}
+
+// Eliminar imagen antigua
+function cleanupOldImages(maxImages = 50) {
+    const images = getStoredImages();
+    const imageIds = Object.keys(images);
+    
+    if (imageIds.length > maxImages) {
+        // Ordenar por timestamp y eliminar las más antiguas
+        const sorted = imageIds.sort((a, b) => 
+            new Date(images[a].timestamp) - new Date(images[b].timestamp)
+        );
+        
+        sorted.slice(0, imageIds.length - maxImages).forEach(id => {
+            delete images[id];
+        });
+        
+        localStorage.setItem(CHATBOT_CONFIG.STORAGE_IMAGES, JSON.stringify(images));
+    }
+}
+
+
 // Exportar funciones
 if (typeof window !== 'undefined') {
     window.CHATBOT_CONFIG = CHATBOT_CONFIG;
@@ -119,5 +205,12 @@ if (typeof window !== 'undefined') {
     window.setModel = setModel;
     window.getNextModel = getNextModel;
     window.getSystemPrompt = getSystemPrompt;
+    window.supportsImages = supportsImages;
+    window.saveImageToStorage = saveImageToStorage;
+    window.getStoredImages = getStoredImages;
+    window.cleanupOldImages = cleanupOldImages;
 }
+
+
+
 

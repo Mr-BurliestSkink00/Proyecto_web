@@ -1441,3 +1441,225 @@ body {
         font-size: 13px;
     }
 }
+
+
+/* ============================================
+   ESTILOS PARA IMÁGENES EN CHATBOT
+   ============================================ */
+
+/* Contenedor de botones de imagen */
+.image-buttons-container {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-image-upload, .btn-camera {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.btn-camera {
+    background: linear-gradient(135deg, #CB6EEA 0%, #9d4edd 100%);
+}
+
+.btn-image-upload:hover, .btn-camera:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-camera:hover {
+    box-shadow: 0 4px 12px rgba(203, 110, 234, 0.3);
+}
+
+/* Contenedor de previsualización */
+.image-preview-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px dashed #cbd5e1;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.image-preview-item {
+    position: relative;
+    width: 70px;
+    height: 70px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid #667eea;
+    transition: transform 0.2s ease;
+}
+
+.image-preview-item:hover {
+    transform: scale(1.05);
+}
+
+.image-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Mensajes con imágenes */
+.message-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 8px;
+    background: rgba(248, 250, 252, 0.5);
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.message-image-container {
+    width: 100px;
+    height: 100px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.user-message .message-image-container {
+    border-color: #667eea;
+}
+
+.message-image-container:hover {
+    border-color: #94a3b8;
+    transform: scale(1.02);
+}
+
+.message-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Indicador de que el mensaje contiene imágenes */
+.has-images-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    font-size: 0.8rem;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+/* Modal de cámara */
+.camera-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.camera-modal video {
+    max-width: 90%;
+    max-height: 70%;
+    border-radius: 10px;
+    box-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+}
+
+.camera-buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 20px;
+}
+
+.camera-buttons button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.camera-buttons button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.camera-buttons button:nth-child(2) {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+}
+
+/* Notificaciones específicas para imágenes */
+.notification.image-notification {
+    border-left: 4px solid #667eea;
+}
+
+/* Scrollbar personalizado para preview */
+.image-preview-container::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.image-preview-container::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 3px;
+}
+
+.image-preview-container::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 3px;
+}
+
+.image-preview-container::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .image-preview-container {
+        max-height: 80px;
+    }
+    
+    .image-preview-item {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .message-image-container {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .btn-image-upload, .btn-camera {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+}
